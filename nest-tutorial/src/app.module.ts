@@ -1,28 +1,45 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ProductModule } from './modules/products/product.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
 import { ProductsEntity } from './entities/products.entity';
+import { UsersModule } from './modules/users/users.module';
+import { User } from './entities/users.entity';
+import { AuthModule } from './modules/auth/auth.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: 'localhost',
-      port: 3306,
-      username: 'root',
-      password: '123456',
-      database: 'nestjs-api-v1',
-      entities: [ProductsEntity],
+      type: process.env.DB_DRIVER as any,
+      host: process.env.DB_HOST,
+      port: +process.env.DB_PORT!,
+      username: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+      entities: [ProductsEntity, User],
       synchronize: true,
     }),
-    ProductModule
+    ConfigModule.forRoot(),
+    ProductModule,
+    UsersModule,
+    AuthModule
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {
-  constructor(private dataSource: DataSource) { }
+  configure(consumer: MiddlewareConsumer) {
+    // consumer.apply(LoggerMiddleware).forRoutes(
+    //   {
+    //     path: '/products/*',
+    //     method: RequestMethod.ALL
+    //   },
+    //   {
+    //     path: '/products',
+    //     method: RequestMethod.ALL
+    //   },
+    // );
+  }
 }

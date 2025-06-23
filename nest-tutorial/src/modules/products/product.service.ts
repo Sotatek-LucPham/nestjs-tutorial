@@ -1,11 +1,9 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PaginationDto } from 'src/dto/pagination.dto';
 import { ProductDto } from 'src/dto/product.dto';
 import { ProductsEntity } from 'src/entities/products.entity';
-import { PaginationResult } from 'src/global/globalClass';
-import { Product } from 'src/models/product.model';
-import { DEFAULT_PAGE_SIZE } from 'src/utils/constants';
+import { PaginationResult } from 'src/global/paginationResult';
 import { Repository } from 'typeorm';
 
 @Injectable()
@@ -25,7 +23,6 @@ export class ProductService {
             queryBuilder.where('product.productName LIKE :search', { search: `%${search}%` });
         }
 
-        // sắp xếp nếu có truyền sort
         if (sort) {
             queryBuilder.orderBy(`product.${sort}`, order ?? 'ASC');
         }
@@ -75,7 +72,7 @@ export class ProductService {
         const updated = await this.productsRepository.findOneBy({ id });
 
         if (!updated) {
-            throw new InternalServerErrorException(`Failed to retrieve updated product with id ${id}`);
+            throw new BadRequestException(`Failed to retrieve updated product with id ${id}`);
         }
 
         return updated;
@@ -85,7 +82,7 @@ export class ProductService {
         const product = await this.productsRepository.findOneBy({ id });
 
         if (!product) {
-            throw new NotFoundException(`Product with id ${id} not found`);
+            throw new HttpException(`Product with id ${id} not found`, HttpStatus.NOT_FOUND);
         }
 
         await this.productsRepository.delete(id);

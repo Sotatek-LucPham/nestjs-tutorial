@@ -1,79 +1,52 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, ValidationPipe } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Logger, Param, Post, Put, Query, Req, UseGuards } from "@nestjs/common";
 import { ProductService } from "./product.service";
-import { PaginationResult, ResponseData } from "src/global/globalClass";
-import { HttpMessage, HttpStatus } from "src/global/globalEnum";
 import { ProductDto } from "src/dto/product.dto";
 import { ProductsEntity } from "src/entities/products.entity";
 import { PaginationDto } from "src/dto/pagination.dto";
+import { JwtAuthGuard } from "src/guards/jwt-auth.guard.";
+import { PaginationResult } from "src/global/paginationResult";
 
 @Controller('products')
-
+@UseGuards(JwtAuthGuard)
 export class ProductController {
+
+    private logger = new Logger(ProductController.name);
 
     constructor(private readonly productService: ProductService) { }
 
     @Get()
     async getProducts(
+        @Req() request: any,
         @Query() paginationDto: PaginationDto,
         @Query('search') search?: string,
-    ): Promise<ResponseData<PaginationResult<ProductsEntity>>> {
-        try {
-            return new ResponseData<PaginationResult<ProductsEntity>>(await this.productService.getProducts(paginationDto, search), HttpStatus.SUCCESS, HttpMessage.SUCCESS);
-        } catch (error) {
-            return new ResponseData<PaginationResult<ProductsEntity>>(null, HttpStatus.ERROR, HttpMessage.ERROR);
-        }
+    ): Promise<PaginationResult<ProductsEntity>> {
+        // console.log(request.user)
+        // this.logger.log("find-all");
+        return await this.productService.getProducts(paginationDto, search);
     }
 
     @Post()
     async createProduct(
         @Body() productDto: ProductDto
-    ): Promise<ResponseData<ProductsEntity>> {
-        try {
-            const created = await this.productService.createProduct(productDto);
-            return new ResponseData<ProductsEntity>(
-                created,
-                HttpStatus.SUCCESS,
-                HttpMessage.SUCCESS
-            );
-        } catch (error) {
-            return new ResponseData<ProductsEntity>(
-                null,
-                HttpStatus.ERROR,
-                error.message
-            );
-        }
+    ): Promise<ProductsEntity> {
+        return await this.productService.createProduct(productDto);
     }
 
     @Get('/:id')
-    async detailProduct(@Param('id') id: number): Promise<ResponseData<ProductsEntity>> {
-        try {
-            const product = await this.productService.detailProduct(id);
-            return new ResponseData<ProductsEntity>(product, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
-        } catch (error) {
-            return new ResponseData<ProductsEntity>(null, HttpStatus.ERROR, HttpMessage.ERROR);
-        }
+    async detailProduct(@Param('id') id: number): Promise<ProductsEntity> {
+        return await this.productService.detailProduct(id);
     }
 
     @Put(':id')
     async updateProduct(
         @Param('id') id: number,
         @Body() productDto: ProductDto,
-    ): Promise<ResponseData<ProductsEntity>> {
-        try {
-            const updated = await this.productService.updateProduct(+id, productDto);
-            return new ResponseData<ProductsEntity>(updated, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
-        } catch (error) {
-            return new ResponseData<ProductsEntity>(null, HttpStatus.ERROR, error.message);
-        }
+    ): Promise<ProductsEntity> {
+        return await this.productService.updateProduct(+id, productDto);
     }
 
     @Delete(':id')
-    async deleteProduct(@Param('id') id: number): Promise<ResponseData<ProductsEntity>> {
-        try {
-            const deleted = await this.productService.deleteProduct(+id);
-            return new ResponseData<ProductsEntity>(deleted, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
-        } catch (error) {
-            return new ResponseData<ProductsEntity>(null, HttpStatus.ERROR, error.message);
-        }
+    async deleteProduct(@Param('id') id: number): Promise<ProductsEntity> {
+        return await this.productService.deleteProduct(+id);
     }
 }
